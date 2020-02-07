@@ -1,0 +1,9 @@
+[package]
+name = "git-dater"
+version = "0.1.0"
+authors = ["Gregor Weber <gregorwbr@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = "0.4"
+git2 = "0.11"

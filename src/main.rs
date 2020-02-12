@@ -1,3 +1,4 @@
+use indicatif::ProgressBar;
 use std::{
     collections::{HashMap, HashSet},
     env,
@@ -16,8 +17,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     env::set_current_dir(args.get(1).expect("missing path arg"))?;
 
     let output = Command::new("git").arg("ls-files").output()?;
-    let mut filenames: HashSet<&str> =
+    let mut remaining_filenames: HashSet<&str> =
         HashSet::from_iter(from_utf8(output.stdout.as_ref())?.trim_end().split('\n'));
+
+    let progress_bar = ProgressBar::new(remaining_filenames.len() as u64);
 
     let child = Command::new("git")
         .arg("log")
@@ -41,18 +44,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if line.starts_with(DATE_PREFIX) {
             date = Some(line[DATE_PREFIX.len()..].to_owned())
-        } else if filenames.remove(line) {
+        } else if remaining_filenames.remove(line) {
+            progress_bar.inc(1);
             timestamps.insert(
                 line.to_owned(),
                 date.to_owned().unwrap_or(String::from("?")),
             );
-            if filenames.is_empty() {
+            if remaining_filenames.is_empty() {
                 break;
             }
         }
     }
 
-    assert!(filenames.is_empty());
+    progress_bar.finish_and_clear();
+
+    if !remaining_filenames.is_empty() {
+        println!(
+            "Couldn't find timestamps for {} files",
+            remaining_filenames.len()
+        );
+    }
 
     let mut file = File::create("times.json")?;
     file.write_all(format!("{:#?}", timestamps).as_bytes())?;

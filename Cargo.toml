@@ -5,3 +5,4 @@ authors = ["Gregor Weber <gregorwbr@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+indicatif = "0.14"
